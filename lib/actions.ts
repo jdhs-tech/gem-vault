@@ -7,6 +7,11 @@ import { redirect } from "next/navigation"
 
 export async function getGems(search?: string, category?: string, rarity?: string): Promise<Gem[]> {
   try {
+    // During build time with dummy URL, return empty array
+    if (process.env.DATABASE_URL?.includes('dummy')) {
+      return []
+    }
+
     let query = "SELECT * FROM gems WHERE 1=1"
     const params: any[] = []
     let paramIndex = 1
@@ -41,6 +46,11 @@ export async function getGems(search?: string, category?: string, rarity?: strin
 
 export async function getGemById(id: number): Promise<Gem | null> {
   try {
+    // During build time with dummy URL, return null
+    if (process.env.DATABASE_URL?.includes('dummy')) {
+      return null
+    }
+
     const result = await sql("SELECT * FROM gems WHERE id = $1", [id])
     return (result[0] as Gem) || null
   } catch (error) {
