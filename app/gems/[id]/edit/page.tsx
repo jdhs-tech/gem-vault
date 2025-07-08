@@ -5,6 +5,13 @@ import { ArrowLeft, Gem } from "lucide-react"
 import { getGemById } from "@/lib/actions"
 import { GemForm } from "@/components/gem-form"
 
+// Required for static export - return empty array during build
+export async function generateStaticParams() {
+  // During build time with static export, we return empty array
+  // The routes will work via client-side navigation
+  return []
+}
+
 interface EditGemPageProps {
   params: {
     id: string

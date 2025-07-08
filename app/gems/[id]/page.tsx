@@ -8,6 +8,13 @@ import { ArrowLeft, Edit, Gem } from "lucide-react"
 import { getGemById } from "@/lib/actions"
 import { DeleteGemButton } from "@/components/delete-gem-button"
 
+// Required for static export - return empty array during build
+export async function generateStaticParams() {
+  // During build time with static export, we return empty array
+  // The routes will work via client-side navigation
+  return []
+}
+
 interface GemDetailPageProps {
   params: {
     id: string
