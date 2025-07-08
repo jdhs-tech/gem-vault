@@ -7,37 +7,67 @@ import { redirect } from "next/navigation"
 
 export async function getGems(search?: string, category?: string, rarity?: string): Promise<Gem[]> {
   try {
-    // During build time with dummy URL, return empty array
-    if (process.env.DATABASE_URL?.includes('dummy')) {
-      return []
+    if (search && category && category !== "all" && rarity && rarity !== "all") {
+      const result = await sql`
+        SELECT * FROM gems 
+        WHERE (name ILIKE ${`%${search}%`} OR description ILIKE ${`%${search}%`}) 
+        AND category = ${category} 
+        AND rarity = ${rarity}
+        ORDER BY created_at DESC
+      `
+      return result as Gem[]
+    } else if (search && category && category !== "all") {
+      const result = await sql`
+        SELECT * FROM gems 
+        WHERE (name ILIKE ${`%${search}%`} OR description ILIKE ${`%${search}%`}) 
+        AND category = ${category}
+        ORDER BY created_at DESC
+      `
+      return result as Gem[]
+    } else if (search && rarity && rarity !== "all") {
+      const result = await sql`
+        SELECT * FROM gems 
+        WHERE (name ILIKE ${`%${search}%`} OR description ILIKE ${`%${search}%`}) 
+        AND rarity = ${rarity}
+        ORDER BY created_at DESC
+      `
+      return result as Gem[]
+    } else if (category && category !== "all" && rarity && rarity !== "all") {
+      const result = await sql`
+        SELECT * FROM gems 
+        WHERE category = ${category} 
+        AND rarity = ${rarity}
+        ORDER BY created_at DESC
+      `
+      return result as Gem[]
+    } else if (search) {
+      const result = await sql`
+        SELECT * FROM gems 
+        WHERE name ILIKE ${`%${search}%`} OR description ILIKE ${`%${search}%`}
+        ORDER BY created_at DESC
+      `
+      return result as Gem[]
+    } else if (category && category !== "all") {
+      const result = await sql`
+        SELECT * FROM gems 
+        WHERE category = ${category}
+        ORDER BY created_at DESC
+      `
+      return result as Gem[]
+    } else if (rarity && rarity !== "all") {
+      const result = await sql`
+        SELECT * FROM gems 
+        WHERE rarity = ${rarity}
+        ORDER BY created_at DESC
+      `
+      return result as Gem[]
+    } else {
+      const result = await sql`
+        SELECT * FROM gems 
+        ORDER BY created_at DESC
+      `
+      return result as Gem[]
     }
-
-    let query = "SELECT * FROM gems WHERE 1=1"
-    const params: any[] = []
-    let paramIndex = 1
-
-    if (search) {
-      query += ` AND (name ILIKE $${paramIndex} OR description ILIKE $${paramIndex})`
-      params.push(`%${search}%`)
-      paramIndex++
-    }
-
-    if (category && category !== "all") {
-      query += ` AND category = $${paramIndex}`
-      params.push(category)
-      paramIndex++
-    }
-
-    if (rarity && rarity !== "all") {
-      query += ` AND rarity = $${paramIndex}`
-      params.push(rarity)
-      paramIndex++
-    }
-
-    query += " ORDER BY created_at DESC"
-
-    const result = await sql(query, params)
-    return result as Gem[]
   } catch (error) {
     console.error("Error fetching gems:", error)
     return []
@@ -46,12 +76,7 @@ export async function getGems(search?: string, category?: string, rarity?: strin
 
 export async function getGemById(id: number): Promise<Gem | null> {
   try {
-    // During build time with dummy URL, return null
-    if (process.env.DATABASE_URL?.includes('dummy')) {
-      return null
-    }
-
-    const result = await sql("SELECT * FROM gems WHERE id = $1", [id])
+    const result = await sql`SELECT * FROM gems WHERE id = ${id}`
     return (result[0] as Gem) || null
   } catch (error) {
     console.error("Error fetching gem:", error)
@@ -61,17 +86,10 @@ export async function getGemById(id: number): Promise<Gem | null> {
 
 export async function createGem(data: CreateGemData) {
   try {
-    await sql(
-      "INSERT INTO gems (name, description, image_url, price, category, rarity) VALUES ($1, $2, $3, $4, $5, $6)",
-      [
-        data.name,
-        data.description || null,
-        data.image_url || null,
-        data.price,
-        data.category || null,
-        data.rarity || null,
-      ],
-    )
+    await sql`
+      INSERT INTO gems (name, description, image_url, price, category, rarity) 
+      VALUES (${data.name}, ${data.description || null}, ${data.image_url || null}, ${data.price}, ${data.category || null}, ${data.rarity || null})
+    `
     revalidatePath("/gems")
     redirect("/gems")
   } catch (error) {
@@ -82,18 +100,13 @@ export async function createGem(data: CreateGemData) {
 
 export async function updateGem(data: UpdateGemData) {
   try {
-    await sql(
-      "UPDATE gems SET name = $1, description = $2, image_url = $3, price = $4, category = $5, rarity = $6, updated_at = CURRENT_TIMESTAMP WHERE id = $7",
-      [
-        data.name,
-        data.description || null,
-        data.image_url || null,
-        data.price,
-        data.category || null,
-        data.rarity || null,
-        data.id,
-      ],
-    )
+    await sql`
+      UPDATE gems 
+      SET name = ${data.name}, description = ${data.description || null}, image_url = ${data.image_url || null}, 
+          price = ${data.price}, category = ${data.category || null}, rarity = ${data.rarity || null}, 
+          updated_at = CURRENT_TIMESTAMP 
+      WHERE id = ${data.id}
+    `
     revalidatePath("/gems")
     revalidatePath(`/gems/${data.id}`)
     redirect("/gems")
@@ -105,7 +118,7 @@ export async function updateGem(data: UpdateGemData) {
 
 export async function deleteGem(id: number) {
   try {
-    await sql("DELETE FROM gems WHERE id = $1", [id])
+    await sql`DELETE FROM gems WHERE id = ${id}`
     revalidatePath("/gems")
     redirect("/gems")
   } catch (error) {
@@ -116,7 +129,7 @@ export async function deleteGem(id: number) {
 
 export async function getCategories(): Promise<string[]> {
   try {
-    const result = await sql("SELECT DISTINCT category FROM gems WHERE category IS NOT NULL ORDER BY category")
+    const result = await sql`SELECT DISTINCT category FROM gems WHERE category IS NOT NULL ORDER BY category`
     return result.map((row: any) => row.category)
   } catch (error) {
     console.error("Error fetching categories:", error)
@@ -126,7 +139,7 @@ export async function getCategories(): Promise<string[]> {
 
 export async function getRarities(): Promise<string[]> {
   try {
-    const result = await sql("SELECT DISTINCT rarity FROM gems WHERE rarity IS NOT NULL ORDER BY rarity")
+    const result = await sql`SELECT DISTINCT rarity FROM gems WHERE rarity IS NOT NULL ORDER BY rarity`
     return result.map((row: any) => row.rarity)
   } catch (error) {
     console.error("Error fetching rarities:", error)

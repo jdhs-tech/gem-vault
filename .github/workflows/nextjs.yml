@@ -81,15 +81,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}-
       - name: Install dependencies
-        run: ${{ steps.detect-package-manager.outputs.manager }} ${{ steps.detect-package-manager.outputs.command }}
-      - name: Build with Next.js
-        env:
-          DATABASE_URL: "postgresql://dummy:dummy@localhost:5432/dummy"
-        run: ${{ steps.detect-package-manager.outputs.runner }} next build
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./out
+        run: ${{ steps.detect-package-manager.outputs.manager }} ${{ steps.detect-package-manager.outputs.command }}        - name: Build with Next.js
+          env:
+            DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          run: ${{ steps.detect-package-manager.outputs.runner }} next build        - name: Upload artifact
+          uses: actions/upload-pages-artifact@v3
+          with:
+            path: ./.next
 
   # Deployment job
   deploy:

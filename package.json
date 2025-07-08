@@ -6,7 +6,10 @@
     "build": "next build",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "next start"
+    "start": "next start",
+    "db:setup": "./scripts/setup-database.sh",
+    "db:create-tables": "psql \"$DATABASE_URL\" -f scripts/001-create-gems-table.sql",
+    "db:seed": "psql \"$DATABASE_URL\" -f scripts/002-seed-gems-data.sql"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
